@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d810e55f-fffc-4b77-b6a0-2202e5404322" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="56eb54d5-fc13-4c7e-9664-07daf42a326b" >
+		<db:my-sql-connection host="localhost" port="3306" user="selam" password="Sara2424" database="northwind" />
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="69c07e7f-6ef4-4dd8-b029-1272884bc18b" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/Northwind" driverClassName="org.postgresql.Driver" user="postgres" password="Saronsql//2" />
+	</db:config>
+	<flow name="scater-gather-flowFlow" doc:id="4c8c0c96-6ef5-47ca-bcd0-ebae55f9a6c6" >
+		<http:listener doc:name="Listener" doc:id="08662962-0bde-4652-ad2f-135497e9c2cd" config-ref="HTTP_Listener_config" path="employee"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="3c7e58db-0e95-4afb-8e02-6157f6e71325" >
+			<route >
+				<db:select doc:name="employee data from mysql" doc:id="4a6b4e16-614e-4dfd-9fb1-5e756e8fa396" config-ref="Database_Config">
+					<db:sql ><![CDATA[select * from employee where employeeId = employeeId]]></db:sql>
+					<db:input-parameters ><![CDATA[#["employeeId": attributes.uriParams.employeeId]]]></db:input-parameters>
+				</db:select>
+			</route>
+			<route >
+				<db:select doc:name="employee territory from postgres" doc:id="83d1415b-9de5-4d05-88e8-834e7067e49d" config-ref="Database_Config">
+					<db:sql ><![CDATA[select * from employeeterritory where employeeId = employeeId]]></db:sql>
+					<db:input-parameters ><![CDATA[#["employeeId": attributes.uriParams.employeeId]]]></db:input-parameters>
+				</db:select>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="21c00842-804b-40c8-9879-f8a5a992bed0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+employeeId: payload."0".payload.employeeId,
+lastname: payload."0".payload.lastname,
+firstname: payload."0".payload.firstname,
+title: payload."0".payload.title,
+titleOfCourtesy: payload."0".payload.titleOfCourtesy,
+birthDate: payload."0".payload.birthDate,
+hireDate: payload."0".payload.hireDate,
+address: payload."0".payload.address,
+city: payload."0".payload.city,
+region: payload."0".payload.region,
+postalCode: payload."0".payload.postalCode,
+country: payload."0".payload.country,
+phone: payload."0".payload.phone,
+extension: payload."0".payload.extension,
+mobile: payload."0".payload.mobile,
+email: payload."0".payload.email,
+photo: payload."0".payload.photo,
+notes: payload."0".payload.notes,
+mgrId: payload."0".payload.mgrId,
+photoPath: payload."0".payload.photoPath,
+territoryId: payload."1".payload.territoryId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0f17e531-3e6d-48e0-948c-792ef823eff6" />
+	</flow>
+</mule>
